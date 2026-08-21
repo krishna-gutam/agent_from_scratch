@@ -5,9 +5,12 @@ The session layer. It wraps the existing CLI module (`main.py`) and holds all
 conversation state, tool orchestration and persistence. It imports no UI
 library, so swapping Streamlit for a TUI means rewriting `app.py` only.
 
-`main.py` is imported unchanged. Everything in it lives behind function
-definitions or an `if __name__ == "__main__"` guard, so importing it only
-runs `load_dotenv()`.
+`main.py` is imported unchanged. Everything in it lives behind a function
+definition or an `if __name__ == "__main__"` guard, so importing it only runs
+`load_dotenv()`.
+
+Threads are scoped to the active workspace: opening another project gives you
+that project's conversations, not a global pile of them.
 """
 
 import json
@@ -16,10 +19,10 @@ import uuid
 from dataclasses import dataclass, field
 
 import main as core
-from tools import TOOLS, execute_tool
 import skills as skills_mod
+import workspace
+from tools import TOOLS, execute_tool
 
-CHATS_DIR = "chats"
 CATALOG_FILE = "discovered_models.json"
 
 
@@ -34,7 +37,7 @@ def sanitize_content(text) -> str:
 
 
 def estimate_tokens(messages) -> int:
-    """Rough char/4 estimate. The chat endpoints here return no usage block."""
+    """Rough char/4 estimate. These chat endpoints return no usage block here."""
     return sum(len(json.dumps(m, default=str)) for m in messages) // 4
 
 
@@ -50,17 +53,20 @@ class ToolCall:
 
 
 # --- MODEL CATALOG ----------------------------------------------------------
+# Always run from the app directory: main.py reads and writes the catalog by
+# relative path, and the cwd moves whenever the user switches workspace.
 
 
 def refresh_catalog() -> None:
-    """Re-query every provider. Writes discovered_models.json."""
-    core.discover_models()
+    with workspace.app_directory():
+        core.discover_models()
 
 
 def load_catalog() -> dict:
-    if not os.path.exists(CATALOG_FILE):
-        core.discover_models()
-    return core.load_models()
+    with workspace.app_directory():
+        if not os.path.exists(CATALOG_FILE):
+            core.discover_models()
+        return core.load_models()
 
 
 def search_catalog(query: str = ""):
@@ -76,14 +82,37 @@ def provider_ready(provider: str) -> bool:
     return bool(config and os.getenv(config["api_key_env"]))
 
 
+def provider_status() -> list[dict]:
+    """Every configured provider, whether its key is set, and how many models it offers."""
+    try:
+        catalog = load_catalog()
+    except Exception:
+        catalog = {}
+    return [
+        {
+            "provider": name,
+            "env": config["api_key_env"],
+            "ready": provider_ready(name),
+            "count": len(catalog.get(name, [])),
+        }
+        for name, config in core.CONFIGS.items()
+    ]
+
+
+def catalog_updated_at() -> float | None:
+    """Mtime of discovered_models.json, or None if it was never written."""
+    path = os.path.join(workspace.APP_DIR, CATALOG_FILE)
+    return os.path.getmtime(path) if os.path.exists(path) else None
+
+
 # --- SESSION ----------------------------------------------------------------
 
 
 class ChatSession:
-    """One conversation thread against one model."""
+    """One conversation thread, in one workspace, against one model."""
 
-    def __init__(self, thread_id: str | None = None):
-        os.makedirs(CHATS_DIR, exist_ok=True)
+    def __init__(self, thread_id: str | None = None, root: str | None = None):
+        self.root = os.path.abspath(root or workspace.current())
         self.provider: str | None = None
         self.model: str | None = None
         self.messages: list[dict] = []
@@ -91,7 +120,11 @@ class ChatSession:
         self.busy = False            # a model call is owed
         self.tools_enabled = True
         self.last_error: str | None = None
-        self.thread_id = thread_id or self._new_id()
+
+        # Reopen where this project was left, falling back to a fresh thread.
+        state = workspace.read_state(self.root)
+        self.thread_id = thread_id or state.get("last_thread") or self._new_id()
+        self.provider, self.model = workspace.last_model(self.root)
         self._load()
 
     # --- identity -----------------------------------------------------------
@@ -100,14 +133,18 @@ class ChatSession:
     def _new_id() -> str:
         return uuid.uuid4().hex[:8]
 
+    def _chats_dir(self) -> str:
+        return workspace.chats_dir(self.root)
+
     def _path(self, thread_id: str | None = None) -> str:
-        return os.path.join(CHATS_DIR, f"{thread_id or self.thread_id}.json")
+        return os.path.join(self._chats_dir(), f"{thread_id or self.thread_id}.json")
 
     def is_ready(self) -> bool:
         return bool(self.provider and self.model and provider_ready(self.provider))
 
     def set_model(self, provider: str, model: str) -> None:
         self.provider, self.model = provider, model
+        workspace.remember_model(provider, model, self.root)
         self._save()
 
     @property
@@ -117,6 +154,10 @@ class ChatSession:
     # --- persistence --------------------------------------------------------
 
     def _save(self) -> None:
+        # An untouched thread stays virtual, so browsing around does not
+        # scatter empty json files through the project.
+        if not self.messages and not os.path.exists(self._path()):
+            return
         payload = {
             "provider": self.provider,
             "model": self.model,
@@ -125,6 +166,7 @@ class ChatSession:
         }
         with open(self._path(), "w", encoding="utf-8") as f:
             json.dump(payload, f, indent=2, default=str)
+        workspace.write_state({"last_thread": self.thread_id}, self.root)
 
     def _load(self) -> None:
         if not os.path.exists(self._path()):
@@ -132,13 +174,17 @@ class ChatSession:
         try:
             with open(self._path(), "r", encoding="utf-8") as f:
                 payload = json.load(f)
-        except Exception:
+        except Exception as e:
+            self.last_error = f"Could not read thread {self.thread_id}: {e}"
             return
-        self.provider = payload.get("provider")
-        self.model = payload.get("model")
+        self.provider = payload.get("provider") or self.provider
+        self.model = payload.get("model") or self.model
         self.messages = payload.get("messages", [])
         self.busy = payload.get("busy", False)
         self._rehydrate_pending()
+
+    def _reset_state(self) -> None:
+        self.messages, self.pending, self.busy, self.last_error = [], [], False, None
 
     def _rehydrate_pending(self) -> None:
         """Rebuild the approval gate if we were reloaded mid tool call."""
@@ -151,45 +197,100 @@ class ChatSession:
 
     # --- threads ------------------------------------------------------------
 
+    def _disk_threads(self) -> list[str]:
+        """Thread ids in this workspace, most recently written first."""
+        directory = self._chats_dir()
+        entries = []
+        for filename in os.listdir(directory):
+            if not filename.endswith(".json"):
+                continue
+            full = os.path.join(directory, filename)
+            entries.append((os.path.getmtime(full), filename[:-5]))
+        return [tid for _mtime, tid in sorted(entries, reverse=True)]
+
     def list_threads(self) -> list[str]:
-        names = sorted(
-            f[:-5] for f in os.listdir(CHATS_DIR) if f.endswith(".json")
-        )
-        if self.thread_id not in names:
-            names.append(self.thread_id)
-        return names
+        threads = self._disk_threads()
+        if self.thread_id not in threads:      # the current one may still be virtual
+            threads.insert(0, self.thread_id)
+        return threads
 
     def switch_thread(self, thread_id: str) -> None:
+        if thread_id == self.thread_id:
+            return
         self._save()
         provider, model = self.provider, self.model
+        self._reset_state()
         self.thread_id = thread_id
-        self.messages, self.pending, self.busy = [], [], False
         self._load()
-        # Keep the current model when opening a thread that never picked one.
+        # A thread that never picked a model inherits the current one.
         self.provider = self.provider or provider
         self.model = self.model or model
+        workspace.write_state({"last_thread": self.thread_id}, self.root)
 
-    def new_thread(self, thread_id: str | None = None) -> None:
-        self._save()
+    def new_thread(self, thread_id: str | None = None) -> str | None:
+        """Start an empty thread. Returns an error string, or None on success."""
+        if thread_id:
+            thread_id = thread_id.strip()
+            if not thread_id or any(c in thread_id for c in '/\\:*?"<>|'):
+                return "Error: that thread id contains illegal characters."
+            if os.path.exists(self._path(thread_id)):
+                # Refuse rather than silently overwrite an existing conversation.
+                return f"Error: thread '{thread_id}' already exists."
+
+        self._save()                       # persist the thread we are leaving
+        self._reset_state()
         self.thread_id = thread_id or self._new_id()
-        self.messages, self.pending, self.busy, self.last_error = [], [], False, None
-        self._save()
+        workspace.write_state({"last_thread": self.thread_id}, self.root)
+        return None
+
+    def rename_thread(self, old_id: str, new_id: str) -> str | None:
+        new_id = (new_id or "").strip()
+        if not new_id or any(c in new_id for c in '/\\:*?"<>|'):
+            return "Error: that thread id contains illegal characters."
+        if new_id == old_id:
+            return None
+        if os.path.exists(self._path(new_id)):
+            return f"Error: thread '{new_id}' already exists."
+
+        if old_id == self.thread_id:
+            self._save()
+        if not os.path.exists(self._path(old_id)):
+            return f"Error: thread '{old_id}' has nothing saved yet."
+
+        os.rename(self._path(old_id), self._path(new_id))
+        if old_id == self.thread_id:
+            self.thread_id = new_id
+            workspace.write_state({"last_thread": new_id}, self.root)
+        return None
 
     def delete_thread(self, thread_id: str) -> None:
         path = self._path(thread_id)
         if os.path.exists(path):
             os.remove(path)
-        if thread_id == self.thread_id:
-            self.new_thread()
+
+        if thread_id != self.thread_id:
+            return
+
+        # Clear state *before* choosing a successor, or _save() would write the
+        # deleted thread straight back to disk.
+        self._reset_state()
+        remaining = self._disk_threads()
+        self.thread_id = remaining[0] if remaining else self._new_id()
+        self._load()
+        workspace.write_state({"last_thread": self.thread_id}, self.root)
 
     def thread_summary(self, thread_id: str) -> dict:
-        try:
-            with open(self._path(thread_id), "r", encoding="utf-8") as f:
-                messages = json.load(f).get("messages", [])
-        except Exception:
-            messages = []
+        if thread_id == self.thread_id:
+            messages = self.messages           # live, may be ahead of disk
+        else:
+            try:
+                with open(self._path(thread_id), "r", encoding="utf-8") as f:
+                    messages = json.load(f).get("messages", [])
+            except Exception:
+                messages = []
+
         last_human = next(
-            (m["content"] for m in reversed(messages) if m.get("role") == "user"), ""
+            (m.get("content", "") for m in reversed(messages) if m.get("role") == "user"), ""
         )
         last_ai = next(
             (
@@ -204,8 +305,9 @@ class ChatSession:
     # --- history editing ----------------------------------------------------
 
     def clear_history(self) -> None:
-        self.messages, self.pending, self.busy, self.last_error = [], [], False, None
-        self._save()
+        self._reset_state()
+        if os.path.exists(self._path()):
+            os.remove(self._path())
 
     def undo_last_turn(self) -> bool:
         """Drop everything back to and including the most recent user turn."""
@@ -224,6 +326,7 @@ class ChatSession:
             return False
         cut = starts[1] if len(starts) > 1 else len(self.messages)
         self.messages = self.messages[cut:]
+        self.busy = False
         self._rehydrate_pending()
         self._save()
         return True
@@ -241,7 +344,8 @@ class ChatSession:
 
     @staticmethod
     def skill_catalog() -> list[dict]:
-        return [skills_mod.discover_skills()[k] for k in sorted(skills_mod.discover_skills())]
+        catalog = skills_mod.discover_skills()
+        return [catalog[key] for key in sorted(catalog)]
 
     @staticmethod
     def reload_skills() -> None:
@@ -250,7 +354,7 @@ class ChatSession:
     @staticmethod
     def expand_skill(name: str, task: str = "") -> str | None:
         skill, _candidates = skills_mod.resolve(name)
-        return skills_mod.render(skill, task.strip()) if skill else None
+        return skills_mod.render(skill, (task or "").strip()) if skill else None
 
     def _handle_skill_command(self, text: str):
         """Returns (expanded_prompt, note). Exactly one is not None."""
@@ -283,7 +387,7 @@ class ChatSession:
         if text.startswith("!"):
             silent = text.startswith("!!")
             cmd = (text[2:] if silent else text[1:]).strip()
-            output = core.run_shell(cmd)
+            output = core.run_shell(cmd)          # runs in the active workspace
             if silent:
                 return f"$ {cmd}\n{output}"
             recorded = output
