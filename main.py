@@ -244,15 +244,6 @@ def run_shell(command):
     if not cmd:
         return "[no command given]"
 
-    # 'cd' must run in-process, otherwise the directory change dies with the subshell.
-    if cmd == "cd" or cmd.startswith("cd ") or cmd.startswith("cd\t"):
-        target = os.path.expanduser(cmd[2:].strip() or "~")
-        try:
-            os.chdir(target)
-            return f"[cwd] {os.getcwd()}"
-        except OSError as e:
-            return f"[cd failed] {e}"
-
     try:
         proc = subprocess.run(
             cmd,
