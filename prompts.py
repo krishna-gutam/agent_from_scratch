@@ -1,36 +1,36 @@
-"""Command-invoked skills for the CLI chatbot.
+"""Command-invoked prompts for the CLI chatbot.
 
-A skill is a Markdown file of instructions that the user explicitly loads into
+A prompt is a Markdown file of instructions that the user explicitly loads into
 the conversation with a slash command. Nothing is auto-triggered.
 
 Layout (next to this file):
 
-    skills/
+    prompts/
         code-review/
-            SKILL.md          <- required
+            PROMPT.md          <- required
             checklist.md      <- optional bundled resource
-        commit-message.md     <- single-file skill, name comes from filename
+        commit-message.md     <- single-file prompt, name comes from filename
 
-SKILL.md may open with a frontmatter block:
+PROMPT.md may open with a frontmatter block:
 
     ---
     name: code-review
     description: Review a file or diff for bugs and risky changes.
     ---
 
-Commands (see handle_skill_command):
-    /skills            list available skills
-    /skills reload     re-scan the skills directory
-    /skill <name>      load a skill, no task yet
-    /skill <name> ...  load a skill and give it a task in one go
+Commands (see handle_prompt_command):
+    /prompts            list available prompts
+    /prompts reload     re-scan the prompts directory
+    /prompt <name>      load a prompt, no task yet
+    /prompt <name> ...  load a prompt and give it a task in one go
 """
 
 import os
 from difflib import get_close_matches
 
-SKILLS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "skills")
-PROJECT_ROOT = os.path.dirname(SKILLS_DIR)
-SKILL_FILE = "SKILL.md"
+PROMPTS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "prompts")
+PROJECT_ROOT = os.path.dirname(PROMPTS_DIR)
+PROMPT_FILE = "PROMPT.md"
 
 _CACHE = None
 
@@ -59,17 +59,17 @@ def _split_frontmatter(text):
     return meta, body.strip()
 
 
-def _bundled_files(skill_path):
-    """Every file that ships alongside SKILL.md, as paths relative to the project root."""
-    if os.path.basename(skill_path) != SKILL_FILE:
+def _bundled_files(prompt_path):
+    """Every file that ships alongside PROMPT.md, as paths relative to the project root."""
+    if os.path.basename(prompt_path) != PROMPT_FILE:
         return []
 
-    base = os.path.dirname(skill_path)
+    base = os.path.dirname(prompt_path)
     found = []
     for dirpath, dirnames, filenames in os.walk(base):
         dirnames[:] = [d for d in dirnames if not d.startswith((".", "__"))]
         for filename in filenames:
-            if dirpath == base and filename == SKILL_FILE:
+            if dirpath == base and filename == PROMPT_FILE:
                 continue
             if filename.startswith("."):
                 continue
@@ -78,71 +78,71 @@ def _bundled_files(skill_path):
     return sorted(found)
 
 
-def discover_skills(force=False):
-    """Scan SKILLS_DIR once and cache the result. Returns {lowercase_name: skill}."""
+def discover_prompts(force=False):
+    """Scan PROMPTS_DIR once and cache the result. Returns {lowercase_name: prompt}."""
     global _CACHE
     if _CACHE is not None and not force:
         return _CACHE
 
-    skills = {}
-    if os.path.isdir(SKILLS_DIR):
-        for entry in sorted(os.listdir(SKILLS_DIR)):
+    prompts = {}
+    if os.path.isdir(PROMPTS_DIR):
+        for entry in sorted(os.listdir(PROMPTS_DIR)):
             if entry.startswith((".", "__")):
                 continue
 
-            path = os.path.join(SKILLS_DIR, entry)
+            path = os.path.join(PROMPTS_DIR, entry)
             if os.path.isdir(path):
-                skill_path = os.path.join(path, SKILL_FILE)
-                if not os.path.isfile(skill_path):
+                prompt_path = os.path.join(path, PROMPT_FILE)
+                if not os.path.isfile(prompt_path):
                     continue
                 default_name = entry
             elif entry.lower().endswith(".md"):
-                skill_path = path
+                prompt_path = path
                 default_name = os.path.splitext(entry)[0]
             else:
                 continue
 
             try:
-                meta, body = _split_frontmatter(_read(skill_path))
+                meta, body = _split_frontmatter(_read(prompt_path))
             except Exception as e:
-                print(f"[skills] skipped {skill_path}: {e}")
+                print(f"[prompts] skipped {prompt_path}: {e}")
                 continue
 
             if not body:
                 continue
 
             name = (meta.get("name") or default_name).strip()
-            skills[name.lower()] = {
+            prompts[name.lower()] = {
                 "name": name,
                 "description": meta.get("description", "").strip(),
-                "path": skill_path,
+                "path": prompt_path,
                 "body": body,
-                "files": _bundled_files(skill_path),
+                "files": _bundled_files(prompt_path),
             }
 
-    _CACHE = skills
-    return skills
+    _CACHE = prompts
+    return prompts
 
 
 def resolve(query):
-    """Return (skill, candidates). Exactly one of the two is meaningful."""
-    skills = discover_skills()
+    """Return (prompt, candidates). Exactly one of the two is meaningful."""
+    prompts = discover_prompts()
     q = query.strip().lower()
 
-    if q in skills:
-        return skills[q], []
+    if q in prompts:
+        return prompts[q], []
 
     for match_fn in (lambda k: k.startswith(q), lambda k: q in k):
-        hits = [s for k, s in skills.items() if match_fn(k)]
+        hits = [s for k, s in prompts.items() if match_fn(k)]
         if len(hits) == 1:
             return hits[0], []
         if len(hits) > 1:
             return None, hits
 
-    close = get_close_matches(q, list(skills), n=3, cutoff=0.6)
+    close = get_close_matches(q, list(prompts), n=3, cutoff=0.6)
     if len(close) == 1:
-        return skills[close[0]], []
-    return None, [skills[c] for c in close]
+        return prompts[close[0]], []
+    return None, [prompts[c] for c in close]
 
 
 # --------------------------------------------------------------------------
@@ -150,41 +150,41 @@ def resolve(query):
 # --------------------------------------------------------------------------
 
 def format_catalog():
-    skills = discover_skills()
-    if not skills:
+    prompts = discover_prompts()
+    if not prompts:
         return (
-            "No skills found.\n"
-            f"Add one at {os.path.join(SKILLS_DIR, '<name>', SKILL_FILE)} "
-            f"(or {os.path.join(SKILLS_DIR, '<name>.md')})."
+            "No prompts found.\n"
+            f"Add one at {os.path.join(PROMPTS_DIR, '<name>', PROMPT_FILE)} "
+            f"(or {os.path.join(PROMPTS_DIR, '<name>.md')})."
         )
 
-    width = max(len(s["name"]) for s in skills.values())
-    lines = ["Available skills:"]
-    for key in sorted(skills):
-        skill = skills[key]
-        lines.append(f"  {skill['name']:<{width}}  {skill['description'] or '(no description)'}")
+    width = max(len(s["name"]) for s in prompts.values())
+    lines = ["Available prompts:"]
+    for key in sorted(prompts):
+        prompt = prompts[key]
+        lines.append(f"  {prompt['name']:<{width}}  {prompt['description'] or '(no description)'}")
     lines.append("")
-    lines.append("Load one with: /skill <name> [task]")
+    lines.append("Load one with: /prompt <name> [task]")
     return "\n".join(lines)
 
 
-def render(skill, task=""):
-    """Turn a skill into the user-turn text that gets sent to the model."""
-    rel_path = os.path.relpath(skill["path"], PROJECT_ROOT)
+def render(prompt, task=""):
+    """Turn a prompt into the user-turn text that gets sent to the model."""
+    rel_path = os.path.relpath(prompt["path"], PROJECT_ROOT)
 
     parts = [
-        f"[skill: {skill['name']}]",
+        f"[prompt: {prompt['name']}]",
         f"The instructions below were loaded from {rel_path} at the user's explicit request. "
         "Follow them for this task and for the rest of this conversation, unless the user says otherwise.",
-        "--- BEGIN SKILL ---",
-        skill["body"],
-        "--- END SKILL ---",
+        "--- BEGIN PROMPT ---",
+        prompt["body"],
+        "--- END PROMPT ---",
     ]
 
-    if skill["files"]:
-        listing = "\n".join("  - " + f for f in skill["files"])
+    if prompt["files"]:
+        listing = "\n".join("  - " + f for f in prompt["files"])
         parts.append(
-            "Files bundled with this skill (read them with run_powershell tool only if the "
+            "Files bundled with this prompt (read them with run_powershell tool only if the "
             f"instructions above call for it):\n{listing}"
         )
 
@@ -192,7 +192,7 @@ def render(skill, task=""):
         parts.append(f"Task: {task}")
     else:
         parts.append(
-            "No task was given yet. Confirm in one short line that the skill is loaded, "
+            "No task was given yet. Confirm in one short line that the prompt is loaded, "
             "and state what you need from the user to start."
         )
 
@@ -203,8 +203,8 @@ def render(skill, task=""):
 # command entry point
 # --------------------------------------------------------------------------
 
-def handle_skill_command(user_input):
-    """Handle '/skill...' input.
+def handle_prompt_command(user_input):
+    """Handle '/prompt...' input.
 
     Returns the expanded prompt text to send as a normal user turn, or None if
     the command was fully handled locally (listing, reload, error).
@@ -214,26 +214,26 @@ def handle_skill_command(user_input):
     rest = parts[1].strip() if len(parts) > 1 else ""
 
     if rest.split(" ")[0].lower() in ("reload", "refresh") and rest:
-        discover_skills(force=True)
-        print("[skills reloaded]")
+        discover_prompts(force=True)
+        print("[prompts reloaded]")
         print(format_catalog() + "\n")
         return None
 
-    if command == "/skills" or not rest:
+    if command == "/prompts" or not rest:
         print(format_catalog() + "\n")
         return None
 
     name, _, task = rest.partition(" ")
-    skill, candidates = resolve(name)
+    prompt, candidates = resolve(name)
 
-    if skill is None:
+    if prompt is None:
         if candidates:
             print(f"'{name}' is ambiguous. Did you mean: "
                   + ", ".join(c["name"] for c in candidates) + "\n")
         else:
-            print(f"No skill named '{name}'.\n")
+            print(f"No prompt named '{name}'.\n")
             print(format_catalog() + "\n")
         return None
 
-    print(f"[skill loaded: {skill['name']} <- {os.path.relpath(skill['path'], PROJECT_ROOT)}]")
-    return render(skill, task.strip())
+    print(f"[prompt loaded: {prompt['name']} <- {os.path.relpath(prompt['path'], PROJECT_ROOT)}]")
+    return render(prompt, task.strip())

@@ -33,7 +33,7 @@ def sanitize_content(text) -> str:
     """Stop stray dollar signs from being swallowed as LaTeX by st.markdown."""
     if not isinstance(text, str):
         text = str(text)
-    return text.replace("$", "\\$")
+    return text
 
 
 def estimate_tokens(messages) -> int:
