@@ -1,0 +1,39 @@
+{
+  "provider": "Google Gemini (OpenAI Compatible)",
+  "model": "models/gemini-3.5-flash-lite",
+  "busy": false,
+  "messages": [
+    {
+      "role": "user",
+      "content": "ls"
+    },
+    {
+      "role": "assistant",
+      "tool_calls": [
+        {
+          "extra_content": {
+            "google": {
+              "thought_signature": "El4KXAERTTIP9xFAAQjqy1NUk6tNxsSD2yXOGoxvKiNJSGWTMxSezr3/hFRlgkwSb4VUmIyFevzKJWCFeP/t2tah+cgxOlCDlY/AhD9PWmHk+7cPvc6d0MMOLFGk56f0"
+            }
+          },
+          "function": {
+            "arguments": "{\"justification\":\"List files in the current working directory\",\"script\":\"Get-ChildItem | Select-Object Name, Length, LastWriteTime\"}",
+            "name": "run_powershell"
+          },
+          "id": "call_690928",
+          "type": "function"
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "call_690928",
+      "name": "run_powershell",
+      "content": "Name                   Length LastWriteTime        \n----                   ------ -------------        \n.chatbot                      8/22/2026 3:32:16 AM \n.venv                         8/22/2026 2:17:27 AM \nchats                         8/22/2026 2:55:09 AM \nskills                        8/22/2026 1:22:13 AM \ntools                         8/21/2026 9:37:48 PM \n__pycache__                   8/22/2026 3:39:22 AM \n.env                   428    8/21/2026 12:13:17 PM\n.gitignore             98     8/21/2026 2:21:49 PM \n.recent_projects.json  31     8/22/2026 3:32:22 AM \napp.py                 21391  8/22/2026 3:38:51 AM \nbackend.py             17941  8/22/2026 3:39:00 AM \nchatbot.py             11326  8/21/2026 5:52:22 PM \ncombined_app.py        24938  8/21/2026 1:54:31 PM \ncombine_py.py          5861   8/20/2026 3:39:42 PM \ndiscovered_models.json 19520  8/22/2026 2:46:32 AM \nmain.py                13689  8/22/2026 1:14:20 AM \nskills.py              7846   8/22/2026 3:04:41 AM \nworkspace.py           8164   8/22/2026 3:39:11 AM"
+    },
+    {
+      "role": "assistant",
+      "content": "Here are the files and folders in the current directory:\n\n- **Folders:** `.chatbot`, `.venv`, `chats`, `skills`, `tools`, `__pycache__`\n- **Files:** `app.py`, `backend.py`, `chatbot.py`, `combined_app.py`, `combine_py.py`, `discovered_models.json`, `main.py`, `skills.py`, `workspace.py`, `.env`, `.gitignore`, `.recent_projects.json`\n\nLet me know what you'd like to work on!"
+    }
+  ]
+}

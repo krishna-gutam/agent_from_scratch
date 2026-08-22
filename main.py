@@ -8,6 +8,7 @@ from difflib import SequenceMatcher
 from dotenv import load_dotenv
 from tools import TOOLS, execute_tool
 from skills import handle_skill_command
+from prompts import handle_prompt_command
 
 load_dotenv()
 
@@ -270,6 +271,7 @@ def chat_loop(selected_provider, selected_model):
     print("Type your message below. Commands: '/exit' or '/quit' to exit, '/switch' to change model, '/clear' to clear history.")
     print("Shell: '!cmd' runs locally and adds the output to context, '!!cmd' runs locally and keeps it out of context.\n")
     print("Skills: '/skills' lists them, '/skill <name> [task]' loads one, '/skills reload' re-scans.")
+    print("Prompts: '/prompts' lists them, '/prompt <name> [task]' loads one, '/prompts reload' re-scans.")
 
     messages = []
 
@@ -288,6 +290,11 @@ def chat_loop(selected_provider, selected_model):
             return "exit"
         if user_input.startswith("/skill"):
             expanded = handle_skill_command(user_input)
+            if expanded is None:
+                continue
+            user_input = expanded
+        elif user_input.startswith("/prompt"):
+            expanded = handle_prompt_command(user_input)
             if expanded is None:
                 continue
             user_input = expanded

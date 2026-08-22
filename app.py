@@ -18,6 +18,7 @@ import uuid
 
 import streamlit as st
 
+import authoring
 import backend
 import workspace
 from backend import ChatSession, sanitize_content
@@ -62,7 +63,7 @@ def flash(note: str | None) -> None:
 
 def render_workspace_panel(session: ChatSession) -> None:
     with st.container(border=True):
-        st.markdown("**📂 Workspace**")
+        #st.markdown("**📂 Workspace**")
 
         options = ["Current Directory"] + workspace.load_recent_projects()
         selected = st.selectbox(
@@ -98,7 +99,7 @@ def render_workspace_panel(session: ChatSession) -> None:
 
 def render_thread_panel(session: ChatSession) -> None:
     with st.container(border=True):
-        st.markdown("**💬 Conversation**")
+        #st.markdown("**💬 Conversation**")
 
         threads = session.list_threads()
         index = threads.index(session.thread_id)
@@ -133,7 +134,7 @@ def render_thread_panel(session: ChatSession) -> None:
 def render_active_model(session: ChatSession) -> None:
     """Read-only status block. Choosing a model happens in the Models tab."""
     with st.container(border=True):
-        st.markdown("**🧠 Model**")
+        #st.markdown("**🧠 Model**")
         if session.model:
             st.caption(f"`{session.model}`")
             st.caption(f"via {session.provider}")
@@ -146,7 +147,7 @@ def render_active_model(session: ChatSession) -> None:
 
 def render_skills_panel(session: ChatSession) -> None:
     with st.container(border=True):
-        st.markdown("**🧩 Skills**")
+        #st.markdown("**🧩 Skills**")
 
         catalog = session.skill_catalog()
         if not catalog:
@@ -172,8 +173,44 @@ def render_skills_panel(session: ChatSession) -> None:
             if expanded:
                 session.submit(expanded)
                 st.rerun()
-        if col2.button("🔄", use_container_width=True, help="Rescan skills directory"):
+        if col2.button("🔄", key="rescan_skills_btn", use_container_width=True,
+                       help="Rescan skills directory"):
             session.reload_skills()
+            st.rerun()
+
+
+def render_prompts_panel(session: ChatSession) -> None:
+    with st.container(border=True):
+        #st.markdown("**📜 Prompts**")
+
+        catalog = session.prompt_catalog()
+        if not catalog:
+            st.caption("No prompts found. Add one at `prompts/<name>/PROMPT.md`.")
+            if st.button("🔄 Rescan prompts", use_container_width=True):
+                session.reload_prompts()
+                st.rerun()
+            return
+
+        names = [p["name"] for p in catalog]
+        chosen = st.selectbox("Prompt", names, key="prompt_picker")
+        description = next(p["description"] for p in catalog if p["name"] == chosen)
+        if description:
+            st.caption(description)
+
+        task = st.text_area(
+            "Task (optional)", height=80, placeholder="e.g. explain workspace.py",
+            key="prompt_task",
+        )
+
+        col1, col2 = st.columns([0.75, 0.25])
+        if col1.button("▶️ Load prompt", use_container_width=True, type="primary"):
+            expanded = session.expand_prompt(chosen, task)
+            if expanded:
+                session.submit(expanded)
+                st.rerun()
+        if col2.button("🔄", key="rescan_prompts_btn", use_container_width=True,
+                       help="Rescan prompts directory"):
+            session.reload_prompts()
             st.rerun()
 
 
@@ -184,6 +221,7 @@ def render_sidebar(session: ChatSession) -> bool:
         render_thread_panel(session)
         render_active_model(session)
         render_skills_panel(session)
+        render_prompts_panel(session)
 
         with st.container(border=True):
             st.metric(label="Conversation Tokens (est.)", value=session.token_count)
@@ -204,7 +242,7 @@ def render_sidebar(session: ChatSession) -> bool:
                 st.rerun()
 
         with st.container(border=True):
-            st.markdown("**🖥️ Shell**")
+            #st.markdown("**🖥️ Shell**")
             command = st.text_input("Command", key="shell_cmd", placeholder="git status")
             col1, col2 = st.columns(2)
             if col1.button("Run + share", use_container_width=True,
@@ -436,6 +474,275 @@ def render_skills_tab(session: ChatSession) -> None:
             st.code(skill["body"], language="markdown")
 
 
+def render_prompts_tab(session: ChatSession) -> None:
+    st.subheader("Installed Prompts")
+
+    catalog = session.prompt_catalog()
+    if not catalog:
+        st.info("Nothing in `prompts/` yet. Add `prompts/<name>/PROMPT.md` and rescan.")
+        return
+
+    st.caption("Prompts live beside the app, so they follow you across workspaces.")
+    for prompt in catalog:
+        with st.expander(f"{prompt['name']} — {prompt['description'] or 'no description'}"):
+            st.caption(prompt["path"])
+            if prompt["files"]:
+                st.caption("Bundled: " + ", ".join(prompt["files"]))
+            st.code(prompt["body"], language="markdown")
+
+
+# --- AUTHORING --------------------------------------------------------------
+
+NEW_ENTRY = "➕ New…"
+
+
+def _author_load(kind: str, slug: str | None) -> None:
+    """
+    Point the editor at `slug` (or a blank entry).
+
+    Only plain state is written here, never a widget key: this runs from button
+    callbacks, and Streamlit refuses to let you assign to the key of a widget
+    that already rendered this run. The form widgets instead take their value
+    from these vars and carry `author_form_key` in their own keys, so bumping
+    that key remounts them with the new values.
+    """
+    st.session_state.author_kind = kind
+    st.session_state.author_slug = slug
+    st.session_state.author_form_key = str(uuid.uuid4())
+
+    loaded = authoring.load(kind, slug) if slug else None
+    st.session_state.author_name = loaded["name"] if loaded else ""
+    st.session_state.author_desc = loaded["description"] if loaded else ""
+    st.session_state.author_body = loaded["body"] if loaded else ""
+    st.session_state.author_layout = loaded["layout"] if loaded else authoring.SINGLE_FILE
+    if loaded and loaded["malformed_frontmatter"]:
+        st.session_state.author_warning = (
+            f"`{loaded['rel_path']}` has no closing `---` fence, so the loader was "
+            "reading its frontmatter as body text. Saving here repairs it."
+        )
+
+
+def _on_disk_slugs(kind: str) -> list[str]:
+    """
+    Entry names as they exist on disk.
+
+    Editing keys on the filename, not the catalog, because the catalog is keyed
+    on the frontmatter name and the two can disagree.
+    """
+    cfg = authoring.KINDS[kind]
+    base, entry = cfg["base"], cfg["entry"]
+    if not os.path.isdir(base):
+        return []
+    found = []
+    for item in sorted(os.listdir(base)):
+        if item.startswith((".", "__")):
+            continue
+        if os.path.isdir(os.path.join(base, item)):
+            if os.path.isfile(os.path.join(base, item, entry)):
+                found.append(item)
+        elif item.lower().endswith(".md"):
+            found.append(os.path.splitext(item)[0])
+    return found
+
+
+def render_authoring_tab(session: ChatSession) -> None:
+    st.subheader("Create & Edit")
+    st.caption(
+        "Writes into `prompts/` and `skills/` beside the app, not into the workspace. "
+        "Saving refreshes this session's catalog immediately."
+    )
+
+    st.session_state.setdefault("author_form_key", "author_initial")
+    st.session_state.setdefault("author_slug", None)
+    st.session_state.setdefault("author_name", "")
+    st.session_state.setdefault("author_desc", "")
+    st.session_state.setdefault("author_body", "")
+    st.session_state.setdefault("author_layout", authoring.SINGLE_FILE)
+
+    kind = st.radio(
+        "Catalog", ["prompt", "skill"], horizontal=True, key="author_kind_picker",
+        format_func=lambda k: f"{'📜' if k == 'prompt' else '🧩'} {k.title()}s",
+    )
+    cfg = authoring.KINDS[kind]
+
+    choices = [NEW_ENTRY] + _on_disk_slugs(kind)
+    current = st.session_state.author_slug
+    index = choices.index(current) if current in choices else 0
+
+    # The form key rides along in this widget's key too, so a reset remounts the
+    # selectbox at the right index instead of fighting the old selection.
+    picked = st.selectbox(
+        "Entry", choices, index=index,
+        key=f"author_pick_{kind}_{st.session_state.author_form_key}",
+    )
+    wanted = None if picked == NEW_ENTRY else picked
+
+    # Selection or catalog changed -> reload the form. Safe here: no form widget
+    # has been instantiated yet this run.
+    if st.session_state.get("author_kind") != kind or current != wanted:
+        _author_load(kind, wanted)
+        st.rerun()
+
+    editing = st.session_state.author_slug
+
+    notice = st.session_state.pop("author_notice", None)
+    if notice:
+        st.success(notice)
+    warning = st.session_state.pop("author_warning", None)
+    if warning:
+        st.warning(warning)
+
+    form_key = st.session_state.author_form_key
+
+    col1, col2 = st.columns([0.42, 0.58])
+    with col1:
+        name = st.text_input(
+            "Name", value=st.session_state.author_name,
+            placeholder="kebab-case, no spaces",
+            help=f"Loaded with `{cfg['command']} <name>`.",
+            key=f"author_name_{form_key}",
+        )
+    with col2:
+        layouts = [authoring.SINGLE_FILE, authoring.DIRECTORY]
+        layout = st.radio(
+            "Layout", layouts, horizontal=True,
+            index=layouts.index(st.session_state.author_layout),
+            format_func=lambda l: (
+                "Single file" if l == authoring.SINGLE_FILE else "Directory + resources"
+            ),
+            help="Use the directory layout only when the entry ships resource files.",
+            key=f"author_layout_{form_key}",
+        )
+
+    description = st.text_input(
+        "Description", value=st.session_state.author_desc,
+        placeholder="One line, shown in the catalog listing.",
+        key=f"author_desc_{form_key}",
+    )
+
+    if name:
+        destination = authoring.target_path(kind, name, layout)
+        st.caption(f"→ `{os.path.relpath(destination, cfg['module'].PROJECT_ROOT)}`")
+
+    st.caption("Body only — the fields above are written as frontmatter for you.")
+    if st_ace:
+        body = st_ace(
+            value=st.session_state.author_body, language="markdown",
+            theme="monokai", height=420, key=f"author_body_{form_key}",
+        )
+    else:
+        body = st.text_area(
+            "Body", value=st.session_state.author_body, height=420,
+            label_visibility="collapsed", key=f"author_body_{form_key}",
+        )
+    body = body or ""
+
+    errors, warnings = authoring.validate(kind, name, description, body, layout, editing)
+    for problem in errors:
+        st.error(problem)
+    for note in warnings:
+        st.warning(note)
+
+    col1, col2, col3, col4 = st.columns([0.28, 0.28, 0.18, 0.26])
+
+    if col1.button("💾 Save", type="primary", use_container_width=True,
+                   disabled=bool(errors)):
+        ok, message = authoring.save(kind, name, description, body, layout, editing)
+        if ok:
+            session.reload_prompts() if kind == "prompt" else session.reload_skills()
+            _author_load(kind, name.strip())
+            st.session_state.author_notice = message
+            st.rerun()
+        st.error(message)
+
+    if col2.button("🧪 Insert starter body", use_container_width=True,
+                   disabled=bool(body.strip())):
+        st.session_state.author_body = authoring.starter_body(name or "new entry")
+        st.session_state.author_form_key = str(uuid.uuid4())
+        st.rerun()
+
+    if col3.button("↩️ Revert", use_container_width=True):
+        _author_load(kind, editing)
+        st.rerun()
+
+    if editing:
+        with col4.popover("🗑️ Delete", use_container_width=True):
+            st.caption(f"Permanently delete `{editing}`?")
+            if st.session_state.author_layout == authoring.DIRECTORY:
+                st.caption("Its bundled files go with it.")
+            if st.button("Yes, delete it", type="primary", key="author_delete_confirm"):
+                ok, message = authoring.delete(kind, editing)
+                if ok:
+                    session.reload_prompts() if kind == "prompt" else session.reload_skills()
+                    _author_load(kind, None)
+                    st.session_state.author_notice = message
+                    st.rerun()
+                st.error(message)
+
+    if editing:
+        _render_bundled_editor(kind, editing)
+        with st.expander("👁️ Preview what the model receives"):
+            rendered = authoring.preview(kind, editing, "sample task")
+            st.code(rendered or "Not loadable — fix the errors above.",
+                    language="markdown")
+
+
+def _render_bundled_editor(kind: str, slug: str) -> None:
+    saved_layout = st.session_state.author_layout
+
+    with st.expander("📎 Bundled files"):
+        if saved_layout != authoring.DIRECTORY:
+            st.caption(
+                "Single-file entries cannot ship resources. Switch the layout to "
+                "directory and save, then add files here."
+            )
+            return
+
+        st.caption(
+            "These are listed to the model, not inlined. Reference a file by its "
+            "path in the body or it will never be read."
+        )
+
+        # Bundled paths are recorded relative to the repo root, but
+        # save_bundled wants them relative to the entry's own directory — and
+        # they can be nested a level deeper.
+        entry_dir = os.path.relpath(
+            os.path.dirname(authoring.target_path(kind, slug, authoring.DIRECTORY)),
+            authoring.KINDS[kind]["module"].PROJECT_ROOT,
+        )
+
+        for rel in authoring.bundled_files(kind, slug):
+            st.markdown(f"**`{rel}`**")
+            content = st.text_area(
+                rel, value=authoring.read_bundled(kind, rel), height=200,
+                key=f"bundle_body_{kind}_{rel}", label_visibility="collapsed",
+            )
+            col1, col2, _ = st.columns([0.2, 0.2, 0.6])
+            if col1.button("💾 Save", key=f"bundle_save_{kind}_{rel}",
+                           use_container_width=True):
+                ok, message = authoring.save_bundled(
+                    kind, slug, os.path.relpath(rel, entry_dir), content
+                )
+                (st.success if ok else st.error)(message)
+            if col2.button("🗑️ Remove", key=f"bundle_del_{kind}_{rel}",
+                           use_container_width=True):
+                ok, message = authoring.delete_bundled(kind, rel)
+                if ok:
+                    st.rerun()
+                st.error(message)
+
+        st.divider()
+        new_name = st.text_input("New file", placeholder="checklist.md",
+                                 key=f"bundle_new_name_{kind}_{slug}")
+        new_body = st.text_area("Contents", height=140,
+                                key=f"bundle_new_body_{kind}_{slug}")
+        if st.button("➕ Add file", key=f"bundle_add_{kind}_{slug}"):
+            ok, message = authoring.save_bundled(kind, slug, new_name, new_body)
+            if ok:
+                st.rerun()
+            st.error(message)
+
+
 # --- CHAT -------------------------------------------------------------------
 
 
@@ -514,13 +821,24 @@ def main() -> None:
     session = get_session()
     auto_approve = render_sidebar(session)
 
-    tab_chat, tab_models, tab_edit, tab_skills, tab_logs, tab_history = st.tabs(
+    (
+        tab_chat,
+        tab_models,
+        tab_edit,
+        tab_skills,
+        tab_prompts,
+        tab_author,
+        tab_logs,
+        tab_history,
+    ) = st.tabs(
         [
             "💬 Chat Interface",
             "🧠 Models",
             "📝 Editor",
             "🧩 Skills",
-            "📜 Message Logs",
+            "📜 Prompts",
+            "✍️ Create & Edit",
+            "🗒️ Message Logs",
             "🕒 Manage History",
         ]
     )
@@ -536,6 +854,12 @@ def main() -> None:
 
     with tab_skills:
         render_skills_tab(session)
+
+    with tab_prompts:
+        render_prompts_tab(session)
+
+    with tab_author:
+        render_authoring_tab(session)
 
     with tab_edit:
         render_editor_tab()
@@ -577,10 +901,12 @@ def main() -> None:
         st.chat_input("Select a model to start chatting...", disabled=True)
         return
 
-    prompt = st.chat_input("Message, !shell command, or /skill <name> …")
+    user_text = st.chat_input(
+        "Message, !shell command, /skill <name> or /prompt <name> …"
+    )
 
-    if prompt:
-        flash(session.submit(prompt))
+    if user_text:
+        flash(session.submit(user_text))
         st.rerun()
 
 

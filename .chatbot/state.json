@@ -1,0 +1,5 @@
+{
+  "provider": "Google Gemini (OpenAI Compatible)",
+  "model": "models/gemini-3.1-flash-lite",
+  "last_thread": "4"
+}

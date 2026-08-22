@@ -61,6 +61,13 @@ def run_powershell(script: str, justification: str) -> str:
         # Return stdout if present, otherwise return stderr, or a clear message
         output = result.stdout.strip()
         error = result.stderr.strip()
+        
+        # Truncate output to prevent token overflow
+        if len(output) > 2000:
+            output = output[:2000] + "\n... (truncated)"
+        if len(error) > 2000:
+            error = error[:2000] + "\n... (truncated)"
+
         if output:
             return output
         if error:

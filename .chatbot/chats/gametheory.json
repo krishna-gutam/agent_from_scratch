@@ -1,0 +1,159 @@
+{
+  "provider": "Google Gemini (OpenAI Compatible)",
+  "model": "models/gemini-3.5-flash-lite",
+  "busy": false,
+  "messages": [
+    {
+      "role": "user",
+      "content": "[skill: teach]\n\nThe instructions below were loaded from skills\\teach\\SKILL.md at the user's explicit request. Follow them for this task and for the rest of this conversation, unless the user says otherwise.\n\n--- BEGIN SKILL ---\n\n\ufeff---\nname: teach\ndescription: Explain a complex topic or concept using first principles, the Feynman technique, analogies, and curiosity-driven progression.\n---\n\n# Teach\n\nExplain a concept clearly, matching the user's level, sparking curiosity first, building from first principles, and checking for understanding interactively.\n\n## Steps\n\n1. **Spark Curiosity & Assess:** Hook the user's interest with a counter-intuitive question, mystery, or real-world dilemma related to the concept before jumping into explanations. Assess their baseline.\n2. **First Principles Breakdown:** Strip the concept down to its absolute foundational truths (first principles) rather than relying on dogma or buzzwords.\n3. **Core Explanation & Analogy:** Build the concept step-by-step using simple, jargon-free language and a concrete everyday analogy anchored to those first principles.\n4. **Interactive Check:** End with a single, targeted open-ended question or prompt that tests understanding or invites the user to apply the concept.\n\n## Rules\n\n- **Spark curiosity first:** Never start with a dry definition. Pose an engaging or paradoxical question first to make the user genuinely wonder *why* or *how* something works.\n- **Build from first principles:** Strip away complexity and build upward from undeniable foundational truths step-by-step.\n- **Use analogies second:** Once first principles are set, anchor them with a vivid, everyday analogy.\n- **No data dumps:** Deliver explanations in digestible chunks (max 2-3 paragraphs before prompting).\n- **Check understanding, don't quiz:** Ask open-ended application questions (\"How would you explain X to a colleague?\") rather than multiple-choice trivia.\n- **Handle vague prompts:** If the user names a massive topic, pick one foundational pillar or curiosity hook to start with rather than summarizing the whole field.\n\n## Output\n\nEmit an engaging curiosity hook, a structured first-principles explanation, followed by a single prompt for the user's next step. Do not overwhelm with wall-to-wall text.\n\n--- END SKILL ---\n\nNo task was given yet. Confirm in one short line that the skill is loaded, and state what you need from the user to start."
+    },
+    {
+      "role": "assistant",
+      "content": "Teach skill loaded successfully! What topic or concept would you like to explore?"
+    },
+    {
+      "role": "user",
+      "content": "game theory"
+    },
+    {
+      "role": "assistant",
+      "content": "Imagine two rival ice cream vendors on a busy beach. If they both set up right next to each other in the exact middle, they split the customers down the middle. But if one vendor shifts a few feet to the left, they suddenly capture *all* the beachgoers on that side. Soon, both vendors end up crammed right beside each other in the dead center\u2014even though spreading out would make everyone happier. \n\nWhy do rational people or businesses constantly make choices that lead to worse outcomes for everyone involved? \n\nThat's the core mystery of **Game Theory**: the mathematical study of mathematical models of strategic interaction among rational agents. At its foundational first principle, game theory assumes something stark: **every player is trying to maximize their own payoff, assuming everyone else is doing the exact same thing.** \n\nTo build this up: instead of looking at a decision in isolation, game theory looks at a web of interdependent choices where your best move depends entirely on what you think *I* will do, which depends on what you think *I* think *you* will do. \n\nBefore we look at how this plays out in economics, biology, or nuclear standoffs\u2014how would you intuitively describe what happens in a situation where two people are trying to outsmart each other, but both know the other is trying to do the same?"
+    },
+    {
+      "role": "user",
+      "content": "office politics"
+    },
+    {
+      "role": "assistant",
+      "content": "Ah, office politics\u2014the ultimate high-stakes sandbox for strategic maneuvering! \n\nLet's strip office politics down to its absolute **first principles**. At its core, an office is a system with:\n1. **Limited Resources:** Promotions, budgets, executive attention, and headcount are finite. \n2. **Asymmetric Information:** You don't always know what your peers are whispering to leadership, and they don't know your full bandwidth or backing.\n3. **Interdependent Payoffs:** Your success (or survival during layoffs) isn't just about how hard you work; it's relative to how you look compared to everyone else.\n\nImagine two colleagues working on a shared project. If both put in equal, honest effort, the project succeeds and credit is shared. But what if one person quietly cuts corners to spend that extra time schmoozing the boss, taking the credit while leaving the other to pick up the slack? \n\nThis brings us straight back to our ice cream vendors and Game Theory's most famous paradox: **The Prisoner's Dilemma**. Cooperation yields the best collective outcome for the team, but individual incentives often push everyone toward backstabbing or self-promotion just to avoid being exploited. \n\nIf you were advising a brilliant, hard-working engineer who refuses to play office politics because \"the work should speak for itself,\" how would you use this dynamic to explain why they keep getting passed over for promotions?"
+    },
+    {
+      "role": "user",
+      "content": "dont know"
+    },
+    {
+      "role": "assistant",
+      "content": "That's completely fair\u2014it's a brutal trap to fall into, and it feels completely unfair when it happens. \n\nLet's break down *why* the \"work should speak for itself\" trap is actually a mathematical certainty in game theory. \n\nThink of your work output as a signal. In game theory, if Player A (the political worker) loudly broadcasts their contributions, aligns with leadership's pet projects, and builds alliances, while Player B (the quiet engineer) just does stellar work behind closed doors, leadership faces an **information asymmetry**. They don't have time to look under the hood of every project, so they rely on the signals they can see. \n\nBecause Player A's strategy dominates visibility, Player B's \"silent work\" strategy results in a lower payoff (getting passed over), even if Player B's actual code or output is twice as good. Once one person starts playing the visibility game, everyone else is forced to play it too\u2014otherwise, looking quiet gets misinterpreted as doing nothing. \n\nTo bring this back to you: when you think about your own experiences or workplaces you've seen, where have you noticed people choosing a strategy that feels frustrating or fake, but makes total sense for them to survive or get ahead?"
+    },
+    {
+      "role": "user",
+      "content": "yes"
+    },
+    {
+      "role": "assistant",
+      "content": "Where did you see that happen? What was the situation, and what choice did people end up making?"
+    },
+    {
+      "role": "user",
+      "content": "faking impact"
+    },
+    {
+      "role": "assistant",
+      "content": "\"Faking impact\"\u2014the corporate art of turning a minor routine fix into a legendary PowerPoint presentation while the quiet builder fixes actual burning fires in the background. \n\nLet's look at this through our game theory lens. Why does the system reward \"faking impact\" over actual substance? \n\nIt comes down to **verification costs**. For a manager or executive, actually evaluating the deep technical quality or long-term value of someone's work takes a massive amount of time and specialized effort. It's much cheaper and easier for leadership to evaluate *proxies* for impact\u2014shiny decks, loud updates in Slack, and confident storytelling. \n\nBecause verification is expensive, the rational strategy for an individual becomes: *maximize perceived impact per unit of effort, rather than actual value per unit of effort.* If 80% of the reward comes from 20% of the actual work paired with 80% of the packaging, anyone who refuses to package their work gets mathematically outcompeted.\n\nIf you were trying to design a new set of rules or metrics for a team so that \"faking impact\" actually resulted in a *lower* payoff than real work, what kind of incentive or transparency would you put in place?"
+    },
+    {
+      "role": "user",
+      "content": "dont know"
+    },
+    {
+      "role": "assistant",
+      "content": "That is the trillion-dollar question that every tech company, startup, and bureaucracy has been trying to solve for decades! \n\nIt's genuinely hard because any metric you invent\u2014like lines of code written, tickets closed, or hours logged\u2014can immediately be hacked by someone looking to game the system. (If you reward closed tickets, people just split one bug into ten tiny tickets.)\n\nThis brings us to one final, powerful concept in game theory: **Mechanism Design**. If game theory asks *\"Given the rules, how will rational people behave?\"*, mechanism design asks the reverse: *\"How do we write the rules so that people's self-interest naturally aligns with doing the right thing?\"*\n\nSince designing a foolproof system is notoriously tricky, let's step back for a moment. Looking at everything we've walked through\u2014from ice cream vendors to office politics, information asymmetry, and faking impact\u2014what feels like the most surprising or eye-opening idea about how people play these strategic games?"
+    },
+    {
+      "role": "user",
+      "content": "dont know"
+    },
+    {
+      "role": "assistant",
+      "content": "That is totally okay! Sometimes these concepts take a little while to settle in, or they just map onto things we've already felt intuitively without needing a fancy name. \n\nTo wrap this up simply: game theory basically shows us that people aren't usually acting selfishly just to be mean\u2014they're just responding to the incentives built into the system around them. If the game rewards flash over substance, players will naturally start playing for flash. \n\nThanks for exploring this with me! If there's ever another concept you want to strip down to first principles, just let me know."
+    },
+    {
+      "role": "user",
+      "content": "ok now teach me actual game theory"
+    },
+    {
+      "role": "assistant",
+      "tool_calls": [
+        {
+          "extra_content": {
+            "google": {
+              "thought_signature": "El4KXAERTTIPuQ2Vt3iwhQwTgJXXslN2pXABLGMCYs/DrulBaxA3UhtfeoKan1lkg5mC3DDFNuGmLbYT3lT0xSwNImozlCTYItrDwopfmvNSBoHNzriTrY/QRgtvjKrb"
+            }
+          },
+          "function": {
+            "arguments": "{\"script\":\"Get-ChildItem\",\"justification\":\"Check current directory and context for any specific files\"}",
+            "name": "run_powershell"
+          },
+          "id": "call_1475135",
+          "type": "function"
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "call_1475135",
+      "name": "run_powershell",
+      "content": "Directory: D:\\Apps\\agent\\agi4\n\n\nMode                 LastWriteTime         Length Name                                                                                                   \n----                 -------------         ------ ----                                                                                                   \nd-----         8/22/2026   3:53 AM                .chatbot                                                                                               \nd-----         8/22/2026   2:17 AM                .venv                                                                                                  \nd-----         8/22/2026   5:01 AM                skills                                                                                                 \nd-----         8/21/2026   9:37 PM                tools                                                                                                  \nd-----         8/22/2026   5:25 AM                __pycache__                                                                                            \n-a----         8/21/2026  12:13 PM            428 .env                                                                                                   \n-a----         8/21/2026   2:21 PM             98 .gitignore                                                                                             \n-a----         8/22/2026   4:40 AM             59 .recent_projects.json                                                                                  \n-a----         8/22/2026   3:38 AM          21391 app.py                                                                                                 \n-a----         8/22/2026   5:25 AM          17921 backend.py                                                                                             \n-a----         8/21/2026   5:52 PM          11326 chatbot.py                                                                                             \n-a----         8/22/2026   3:46 AM          19520 discovered_models.json                                                                                 \n-a----         8/22/2026   1:14 AM          13689 main.py                                                                                                \n-a----         8/22/2026   3:04 AM           7846 skills.py                                                                                              \n-a----         8/22/2026   3:39 AM           8164 workspace.py"
+    },
+    {
+      "role": "assistant",
+      "content": "Ah, time to drop the metaphors and look under the mathematical hood! \n\nImagine two rival oil companies deciding whether to drill new wells or restrict production to keep prices high. If both restrict, they both make a fortune. If both drill, they flood the market and crash prices. But if *one* drills while the other restricts, the drilling company makes a killing while the sucker holding back gets wiped out.\n\nWhy do two fiercely competitive CEOs end up making a choice that guarantees lower profits for both of them?\n\nThat is the domain of **formal Game Theory**, pioneered by mathematicians like John von Neumann and John Nash. At its absolute foundational first principle, a formal game consists of three things:\n1. **Players:** Rational agents making choices.\n2. **Actions:** The discrete set of moves available to each player.\n3. **Payoffs:** The numerical outcomes (utilities) for every possible combination of choices.\n\nTo capture this, mathematicians use a **Payoff Matrix**\u2014a grid where Player 1 chooses the rows, Player 2 chooses the columns, and the numbers inside represent their respective payouts (e.g., `(Player 1 Payoff, Player 2 Payoff)`).\n\nBefore we plug numbers into a matrix, how do you think a mathematician figures out what a *rational* player will do when no matter what the *other* person does, one specific choice always yields a better personal payout?"
+    },
+    {
+      "role": "user",
+      "content": "explain with example"
+    },
+    {
+      "role": "assistant",
+      "content": "Let's use the classic, literal example that birthed modern game theory: **The Prisoner's Dilemma**. \n\nTwo suspects are arrested and put in separate interrogation rooms with no way to communicate. The prosecutor has enough to put them away for 1 year on a minor charge, but wants to pin a major crime on them. The prosecutor offers each prisoner a deal:\n\n* **If both stay silent (Cooperate):** They each get **1 year** in prison on the minor charge.\n* **If both confess (Defect):** They each get **5 years** in prison.\n* **If one confesses and the other stays silent:** The confessor goes **free (0 years)** as a reward for turning state's evidence, while the silent one gets **10 years**.\n\nHere is what the **Payoff Matrix** looks like (let's look at it as years in prison, where *lower* numbers are better):\n\n| | Prisoner 2: Stay Silent | Prisoner 2: Confess |\n|---|---|---|\n| **Prisoner 1: Stay Silent** | (-1, -1) | (-10, 0) |\n| **Prisoner 1: Confess** | (0, -10) | (-5, -5) |\n\n*(Remember: format is (Prisoner 1 years, Prisoner 2 years))*\n\nNow let's step into Prisoner 1's shoes and use first principles logic:\n- *What if Prisoner 2 stays silent?* If I stay silent, I get -1 year. If I confess, I get 0 years. **0 is better than -1, so I should confess.**\n- *What if Prisoner 2 confesses?* If I stay silent, I get -10 years. If I confess, I get -5 years. **-5 is better than -10, so I should confess.**\n\nLook at that result: **No matter what Prisoner 2 does, confessing is always a better personal outcome for Prisoner 1.** (0 > -1, and -5 > -10). In game theory, this is called a **Strictly Dominant Strategy**. \n\nBecause Prisoner 2 is identical, they make the exact same calculation. Both confess, and both get 5 years in prison\u2014even though they both would have walked away with just 1 year if they had both stayed silent!\n\nThis brings us to the most famous concept in all of game theory: the **Nash Equilibrium**. A Nash Equilibrium is a state where *no player has an incentive to unilaterally change their strategy*, given what the other player is doing. Here, (Confess, Confess) is the Nash Equilibrium.\n\nIf you were Prisoner 1 in that room, knowing your partner is purely rational and looking at the exact same math, would you trust them to stay silent? Why or why not?"
+    },
+    {
+      "role": "user",
+      "content": "not trust"
+    },
+    {
+      "role": "assistant",
+      "content": "Spot on. You wouldn't trust them\u2014not because they're a bad person, but because *you know their math is identical to yours*. \n\nEven if you both pinky-promised to stay silent beforehand, the moment the door closes, the incentive structure screams at both of you to betray each other. That is the haunting beauty (and tragedy) of game theory: **rationality guarantees a suboptimal outcome.**\n\nNow, what happens if we change the rules of the game? What if instead of playing *once* (a One-Shot Prisoner's Dilemma), you and that same partner have to play this game **every single week** for the rest of your careers? \n\nHow do you think human behavior (and strategy) changes when the game is played repeatedly over time, rather than just once?"
+    },
+    {
+      "role": "user",
+      "content": "we remain silent"
+    },
+    {
+      "role": "assistant",
+      "content": "Precisely! In a repeated game, the whole dynamic flips on its head. \n\nWhen you play once, your horizon is zero seconds into the future, so betrayal is a free pass. But when the game repeats indefinitely, **the future casts a shadow over the present**. \n\nIf you betray your partner this week, they will retaliate next week. Suddenly, the long-term cost of punishment outweighs the short-term gain of betrayal. \n\nIn the 1980s, a political scientist named Robert Axelrod ran a famous computer tournament where he invited game theorists from around the world to submit computer programs to play an iterated (repeated) Prisoner's Dilemma thousands of times. Strategies ranged from pure betrayal to complex psychological manipulation. \n\nThe winner was the simplest program entered: **Tit-for-Tat**. \n1. On move one: **Cooperate** (stay silent).\n2. On every move after: **Copy whatever your opponent did on the previous turn** (if they cooperated, you cooperate; if they defected, you punish immediately).\n\nTit-for-Tat won because it followed three golden rules of strategic survival:\n* **Nice:** It never defects first.\n* **Retaliatory:** It immediately punishes betrayal.\n* **Forgiving:** It instantly goes back to cooperating the moment the other player stops defecting.\n\nBefore we wrap up our crash course in formal game theory, think about real life: team projects at work, countries trading resources, or even drivers merging in traffic. Where have you personally seen a \"Tit-for-Tat\" strategy play out naturally between people?"
+    },
+    {
+      "role": "user",
+      "content": "i want complete course not crash course"
+    },
+    {
+      "role": "assistant",
+      "content": "If you want the full foundational curriculum of game theory, we are going to build the entire analytical framework from the ground up, just like a university-level microeconomics or applied mathematics track. \n\nHere is the **Complete Game Theory Curriculum roadmap** we can walk through step-by-step:\n\n1. **Module 1: Game Representation** (Normal Form / Matrix Games & Extensive Form / Game Trees)\n2. **Module 2: Solution Concepts** (Dominant Strategies, Iterated Elimination of Dominated Strategies, and Pure Strategy Nash Equilibria)\n3. **Module 3: Mixed Strategies & Probability** (When pure rationality fails, playing percentages, and Von Neumann\u2019s Minimax Theorem)\n4. **Module 4: Dynamic & Sequential Games** (Backwards Induction, Subgame Perfection, and Credible Threats\u2014think chess or business entry deterrence)\n5. **Module 5: Information Asymmetry** (Signaling, Screening, Adverse Selection, and the Lemons Problem)\n6. **Module 6: Mechanism Design & Auctions** (Designing rules so people tell the truth, and how Google or governments auction off spectrums/ads)\n\nSince we take this one digestible chunk at a time, let's lock in **Module 1: Extensive Form Games & Game Trees** (moving from static matrices to sequential decision-making over time).\n\nImagine a game where Player 1 goes first, and Player 2 makes their move *after* seeing what Player 1 did. How do you think a rational player looks ahead at future branches of a decision tree to figure out their very first move?"
+    },
+    {
+      "role": "user",
+      "content": "dont know"
+    },
+    {
+      "role": "assistant",
+      "content": "That is the exact threshold where we introduce one of the most powerful tools in all of game theory: **Backwards Induction**.\n\nInstead of starting at step one and trying to guess the future, backwards induction forces you to **start at the very end of the game tree and work your way backward**.\n\nLet's use a concrete, high-stakes business example. \nImagine two companies: **Incumbent (Player 1)** and a **New Startup (Player 2)**. \nThe Startup is deciding whether to enter an established market. If the Startup enters, the Incumbent has two choices: either **Fight** (start a brutal price war where both companies lose money) or **Accommodate** (split the market and both make a profit).\n\nIf we draw this as a game tree (an Extensive Form game), it looks like a branching flowchart with chronological steps:\n1. **Startup's turn:** Enter or Stay Out.\n2. If Startup Stays Out: Game ends. Startup gets $0, Incumbent keeps its monopoly profit ($10M).\n3. If Startup Enters, it becomes **Incumbent's turn:** Fight or Accommodate.\n   - If Incumbent Fights: Startup loses -$2M, Incumbent loses -$1M (price war).\n   - If Incumbent Accommodates: Startup makes +$5M, Incumbent makes +$5M.\n\nTo solve this using **Backwards Induction**, we start at the final decision node (Incumbent's turn):\n- If the Startup actually enters, what will the Incumbent *rationally* choose to do? Fight (-$1M) or Accommodate (+$5M)? \n- Obviously, +$5M is better than -$1M, so the Incumbent will choose **Accommodate**.\n\nKnowing this exact future outcome, we step backward to the Startup's initial choice:\n- If the Startup enters, the Incumbent will accommodate, so the Startup gets +$5M.\n- If the Startup stays out, they get $0.\n- Therefore, the Startup chooses to **Enter**.\n\nUsing backwards induction, the final outcome is: **Startup enters, Incumbent accommodates, both make +$5M.**\n\nApplying this exact logic: if you knew for an absolute fact that your competitor would back down (accommodate) if you pushed forward into their territory, what makes it so terrifying or risky to rely on that \"rational\" prediction in the real world?"
+    },
+    {
+      "role": "user",
+      "content": "they are not rational"
+    },
+    {
+      "role": "assistant",
+      "content": "**Bingo.** That single sentence destroys half of textbook economic theory. \n\nIn the real world, humans are plagued by ego, spite, emotional fatigue, loss aversion, and unpredictable bursts of irrationality. A CEO might choose to \"Fight\" and burn millions of dollars *just to teach the startup a lesson*, even though it mathematically hurts their own bottom line.\n\nThis introduces the distinction between **complete/perfect information** (what textbook math assumes) and **behavioral game theory** (how actual humans behave). \n\nTo account for this, game theorists had to invent concepts like **Credible Threats**. A threat is only credible if it is in the player's rational self-interest to carry it out *when the time comes*. If a threat requires someone to act irrationally to punish you, it's an empty bluff.\n\nThis brings us to the next milestone in our complete curriculum: **Module 2: Iterated Elimination of Dominated Strategies (IEDS)**. \n\nWhen you have a massive matrix game with 5 players and 10 choices each, how do you mathematically simplify the chaos down to the only logical outcome? \n\nThink about how you clean out your closet: you don't pick the absolute best outfit first; you start by throwing away the things you would *never* wear under any circumstances. \n\nIn game theory, if a strategy is strictly worse than another strategy no matter what anyone else does, it is \"dominated.\" If you cross off all dominated strategies for Player 1, Player 2 realizes those choices are gone, which might make *their* second-worst strategy completely useless too. You keep crossing them out one by one until only the rational survivors remain.\n\nIf you are playing a game where you have one strategy that is objectively terrible compared to your other options, why is the very first step of strategic thinking not figuring out what *you* will do, but figuring out what options you can safely throw in the trash?"
+    },
+    {
+      "role": "user",
+      "content": "explain with example"
+    },
+    {
+      "role": "assistant",
+      "content": "Let's use a classic 3-strategy matrix game to see **Iterated Elimination of Dominated Strategies (IEDS)** in action.\n\nImagine two competing coffee shops (Player 1 and Player 2) trying to choose their daily pricing strategy: **Low, Medium, or High**. \n\nHere is the payoff matrix representing their daily profit (Player 1, Player 2):\n\n| | Player 2: Low Price | Player 2: Medium Price | Player 2: High Price |\n|---|---|---|---|\n| **Player 1: Low Price** | (2, 2) | (6, 1) | (8, 0) |\n| **Player 1: Medium Price** | (1, 6) | (5, 5) | (7, 2) |\n| **Player 1: High Price** | (0, 8) | (2, 7) | (4, 4) |\n\nLet's look at this through the lens of cleaning out the closet\u2014crossing out strictly dominated strategies step by step.\n\n### Step 1: Player 1 looks at their own options\nLet's see how Player 1's options compare *no matter what Player 2 does*:\n- Look at **Medium Price** vs **High Price** for Player 1:\n  - If Player 2 plays Low: Medium gives 1, High gives 0 (Medium is better).\n  - If Player 2 plays Medium: Medium gives 5, High gives 2 (Medium is better).\n  - If Player 2 plays High: Medium gives 7, High gives 4 (Medium is better).\n- Look at **Low Price** vs **Medium Price**:\n  - If Player 2 plays Low: Low gives 2, Medium gives 1 (Low is better).\n  - If Player 2 plays Medium: Low gives 6, Medium gives 5 (Low is better).\n  - If Player 2 plays High: Low gives 8, Medium gives 7 (Low is better).\n\nNotice something incredible? **High Price** for Player 1 gives a lower payout than Medium Price *in every single column*. No matter what Player 2 chooses, playing High is an objectively terrible idea for Player 1. \n\nTherefore, Player 1 crosses **High Price** off their list entirely. It is a strictly dominated strategy.\n\n### Step 2: Player 2 realizes Player 1 is rational\nBecause Player 2 knows Player 1 is rational, Player 2 knows Player 1 will *never* play High Price. So, Player 2 can completely erase the \"Player 1: High Price\" row from the board. \n\nNow look at the remaining matrix for Player 2 (comparing their choices of Low, Medium, and High prices):\n- If Player 1 is only playing Low or Medium, let's look at Player 2's choices (the second number in the parentheses):\n  - If Player 1 plays Low: Low gets 2, Medium gets 1, High gets 0.\n  - If Player 1 plays Medium: Low gets 6, Medium gets 5, High gets 2.\n- Look at **High Price** for Player 2: it gives 0 against Low, and 2 against Medium. \n- Look at **Medium Price** for Player 2: it gives 1 against Low, and 5 against Medium.\n- Look at **Low Price** for Player 2: it gives 2 against Low, and 6 against Medium.\n\nPlayer 2's **High Price** is strictly worse than Medium Price in every remaining row. So Player 2 crosses **High Price** off their list too!\n\n### Step 3: The final collapse\nNow Player 1 looks at the board and knows Player 2 has eliminated High Price. \nWe repeat this shrinking process until only the rational core remains. By eliminating the garbage options layer by layer, both players narrow their choices down to the optimal outcome without even needing to guess what the other is feeling.\n\nBefore we move on to Module 3 (Mixed Strategies\u2014what happens when there is no dominant strategy and you have to start bluffing like in poker), does this elimination process make sense, or would you like to poke a hole in it?"
+    }
+  ]
+}

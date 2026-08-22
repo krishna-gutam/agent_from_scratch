@@ -173,28 +173,28 @@ def render(prompt, task=""):
     rel_path = os.path.relpath(prompt["path"], PROJECT_ROOT)
 
     parts = [
-        f"[prompt: {prompt['name']}]",
-        f"The instructions below were loaded from {rel_path} at the user's explicit request. "
-        "Follow them for this task and for the rest of this conversation, unless the user says otherwise.",
-        "--- BEGIN PROMPT ---",
+        # f"[prompt: {prompt['name']}]",
+        # f"The instructions below were loaded from {rel_path} at the user's explicit request. "
+        # "Follow them for this task and for the rest of this conversation, unless the user says otherwise.",
+        # "--- BEGIN PROMPT ---",
         prompt["body"],
-        "--- END PROMPT ---",
+        # "--- END PROMPT ---",
     ]
 
-    if prompt["files"]:
-        listing = "\n".join("  - " + f for f in prompt["files"])
-        parts.append(
-            "Files bundled with this prompt (read them with run_powershell tool only if the "
-            f"instructions above call for it):\n{listing}"
-        )
+    # if prompt["files"]:
+    #     listing = "\n".join("  - " + f for f in prompt["files"])
+    #     parts.append(
+    #         "Files bundled with this prompt (read them with run_powershell tool only if the "
+    #         f"instructions above call for it):\n{listing}"
+    #     )
 
     if task:
         parts.append(f"Task: {task}")
-    else:
-        parts.append(
-            "No task was given yet. Confirm in one short line that the prompt is loaded, "
-            "and state what you need from the user to start."
-        )
+    # else:
+    #     parts.append(
+    #         "No task was given yet. Confirm in one short line that the prompt is loaded, "
+    #         "and state what you need from the user to start."
+    #     )
 
     return "\n\n".join(parts)
 

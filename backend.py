@@ -19,6 +19,7 @@ import uuid
 from dataclasses import dataclass, field
 
 import main as core
+import prompts as prompts_mod
 import skills as skills_mod
 import workspace
 from tools import TOOLS, execute_tool
@@ -373,12 +374,47 @@ class ChatSession:
             return None, f"No skill named '{name}'.\n\n" + skills_mod.format_catalog()
         return expanded, None
 
+    # --- prompts ------------------------------------------------------------
+    # Same shape as skills, against the prompts/ directory instead.
+
+    @staticmethod
+    def prompt_catalog() -> list[dict]:
+        catalog = prompts_mod.discover_prompts()
+        return [catalog[key] for key in sorted(catalog)]
+
+    @staticmethod
+    def reload_prompts() -> None:
+        prompts_mod.discover_prompts(force=True)
+
+    @staticmethod
+    def expand_prompt(name: str, task: str = "") -> str | None:
+        prompt, _candidates = prompts_mod.resolve(name)
+        return prompts_mod.render(prompt, (task or "").strip()) if prompt else None
+
+    def _handle_prompt_command(self, text: str):
+        """Returns (expanded_prompt, note). Exactly one is not None."""
+        parts = text.split(maxsplit=1)
+        rest = parts[1].strip() if len(parts) > 1 else ""
+
+        if rest.lower() in ("reload", "refresh"):
+            self.reload_prompts()
+            return None, "Prompts reloaded.\n\n" + prompts_mod.format_catalog()
+        if parts[0].lower() == "/prompts" or not rest:
+            return None, prompts_mod.format_catalog()
+
+        name, _, task = rest.partition(" ")
+        expanded = self.expand_prompt(name, task)
+        if expanded is None:
+            return None, f"No prompt named '{name}'.\n\n" + prompts_mod.format_catalog()
+        return expanded, None
+
     # --- input --------------------------------------------------------------
 
     def submit(self, text: str) -> str | None:
         """Accept one line of user input. Returns a note to show, or None.
 
-        Understands the same '!cmd', '!!cmd' and '/skill' syntax as the CLI.
+        Understands the same '!cmd', '!!cmd', '/skill' and '/prompt' syntax as
+        the CLI.
         """
         text = (text or "").strip()
         if not text:
@@ -399,6 +435,12 @@ class ChatSession:
 
         if text.startswith("/skill"):
             expanded, note = self._handle_skill_command(text)
+            if expanded is None:
+                return note
+            text = expanded
+
+        elif text.startswith("/prompt"):
+            expanded, note = self._handle_prompt_command(text)
             if expanded is None:
                 return note
             text = expanded

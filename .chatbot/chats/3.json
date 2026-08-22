@@ -1,0 +1,55 @@
+{
+  "provider": "Google Gemini (OpenAI Compatible)",
+  "model": "models/gemini-3.5-flash-lite",
+  "busy": false,
+  "messages": [
+    {
+      "role": "user",
+      "content": "[skill: improve-english]\n\nThe instructions below were loaded from skills\\improve-english\\SKILL.md at the user's explicit request. Follow them for this task and for the rest of this conversation, unless the user says otherwise.\n\n--- BEGIN SKILL ---\n\n\ufeff---\nname: improve-english\ndescription: Correct grammar, polish tone, and explain improvements in text.\n---\n\n# Improve English\n\nCorrect and polish English text while explaining key improvements for clarity and natural phrasing.\n\n## Steps\n\n1. Read the provided text and identify grammatical errors, awkward phrasing, unnatural idioms, or tone mismatches.\n2. Produce a polished version that preserves the original meaning and intended voice.\n3. Provide a clear breakdown of significant corrections made and why they improve the text.\n\n## Rules\n\n- **Preserve intent and voice.** Do not unnecessarily rewrite natural text or alter the user's authentic voice.\n- **Categorize corrections.** Distinguish clearly between objective grammar fixes and stylistic/tone enhancements.\n- **Explain the \"why\".** For non-obvious corrections, briefly explain the rule, nuance, or idiom.\n- **Handle the ambiguous input.** If the text is extremely fragmented or its meaning is unclear, provide the best interpretation first, then ask one targeted clarifying question.\n\n## Output\n\n```markdown\n### Polished Version\n<The corrected/improved text>\n\n### Key Improvements\n- **<Original phrase>** -> **<Improved phrase>**: <Brief explanation of grammar or natural phrasing>\n```\n\n--- END SKILL ---\n\nNo task was given yet. Confirm in one short line that the skill is loaded, and state what you need from the user to start."
+    },
+    {
+      "role": "assistant",
+      "content": "The **improve-english** skill is loaded and ready. Please provide the text you would like me to correct or polish."
+    },
+    {
+      "role": "user",
+      "content": "hi my name is krishna"
+    },
+    {
+      "role": "assistant",
+      "content": "### Polished Version\nHi, my name is Krishna.\n\n### Key Improvements\n- **hi my name is krishna** -> **Hi, my name is Krishna.**: Added a capital letter for the greeting and proper noun (Krishna), a comma after the greeting, and a period at the end of the sentence for proper punctuation and grammar."
+    },
+    {
+      "role": "user",
+      "content": "i am from uttarpradesh lucknow"
+    },
+    {
+      "role": "assistant",
+      "content": "### Polished Version\nI am from Lucknow, Uttar Pradesh.\n\n### Key Improvements\n- **i am from uttarpradesh lucknow** -> **I am from Lucknow, Uttar Pradesh.**: Capitalized the first letter of the sentence and the proper nouns (Lucknow, Uttar Pradesh), added a comma to separate the city from the state, and ended with a period. Also reversed the order to follow standard geographic formatting (City, State/Province)."
+    },
+    {
+      "role": "user",
+      "content": "i have been working as a data scientist for past 1 plus year"
+    },
+    {
+      "role": "assistant",
+      "content": "### Polished Version\nI have been working as a data scientist for over a year.\n\n### Key Improvements\n- **i** -> **I**: Capitalized the first-person pronoun.\n- **for past 1 plus year** -> **for over a year**: Replaced the awkward phrasing \"1 plus year\" with the more natural idiom \"over a year,\" and added the necessary article \"the\" or replaced it with \"over\" (though \"for over a year\" or \"for more than a year\" sounds much more professional and natural than \"past 1 plus year\")."
+    },
+    {
+      "role": "user",
+      "content": "in tata motors digital ai labs"
+    },
+    {
+      "role": "assistant",
+      "content": "### Polished Version\nat Tata Motors Digital AI Labs.\n\n### Key Improvements\n- **in tata motors digital ai labs** -> **at Tata Motors Digital AI Labs.**: Capitalized all proper nouns in the company and lab name, used the preposition **at** instead of **in** for a specific corporate department or lab location, and added a period at the end of the sentence. (Note: This connects with your previous sentence to read: *\"I have been working as a data scientist for over a year at Tata Motors Digital AI Labs.\"*)"
+    },
+    {
+      "role": "user",
+      "content": "during my time in tatamotors, i worked on many different projects"
+    },
+    {
+      "role": "assistant",
+      "content": "### Polished Version\nDuring my time at Tata Motors, I have worked on many different projects.\n\n### Key Improvements\n- **during** -> **During**: Capitalized the first word of the sentence.\n- **in tatamotors** -> **at Tata Motors**: Capitalized and split the company name properly (\"Tata Motors\"), and changed the preposition from \"in\" to \"at\" when referring to a company.\n- **i** -> **I**: Capitalized the personal pronoun.\n- **worked** -> **have worked**: Used the present perfect tense (\"have worked\") to connect your past work at the company with your ongoing employment there (as you mentioned working there for over a year)."
+    }
+  ]
+}
